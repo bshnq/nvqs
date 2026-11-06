@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f7fb">
+<title>Tính điểm NVQS - BV Đa khoa Lãnh Binh Thăng</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --ink:#1e293b; --mute:#64748b; --line:#e2e8f0; --soft:#f1f5f9;
+  --accent:#0d9488; --accent2:#059669; --accent-soft:#ecfdf5; --accent-ink:#0f766e;
+  --ok:#16a34a; --s4:#f59e0b; --s5:#f97316; --s6:#ef4444;
+  --r:14px; --shadow:0 1px 2px rgba(15,23,42,.04),0 4px 14px rgba(15,23,42,.05);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--ink);font-weight:600;font-size:14px;line-height:1.35;
+  min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+
+
+main{flex:1;width:100%;max-width:980px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 12px 76px;display:flex;flex-direction:column;gap:10px}
+
+/* Search: thẻ nổi mở mượt */
+.sw{position:sticky;top:calc(env(safe-area-inset-top) + 8px);height:44px;z-index:40}
+.scard{position:absolute;left:0;right:0;top:0;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);transition:box-shadow .3s var(--ease),border-color .3s,transform .3s var(--ease)}
+.sw.open .scard{border-color:var(--accent);box-shadow:0 16px 40px rgba(15,23,42,.18);transform:translateY(-2px)}
+.sbox{position:relative;height:41px}
+.sbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--mute);pointer-events:none}
+.sbox input{width:100%;height:100%;border:0;border-radius:var(--r);padding:0 40px 0 38px;font-size:15px;font-weight:700;outline:none;background:transparent}
+.sbox .clr{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:31px;height:31px;border-radius:8px;font-size:18px;color:var(--mute);background:var(--soft)}
+.panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s var(--ease)}
+.sw.open .panel{grid-template-rows:1fr}
+.panel>div{overflow:hidden;min-height:0}
+.pin{border-top:1px solid var(--line);max-height:min(68vh,560px);overflow:auto;-webkit-overflow-scrolling:touch;padding:8px;
+  opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .32s var(--ease)}
+.sw.open .pin{opacity:1;transform:none}
+.shint{font-size:11.5px;color:var(--mute);padding:2px 4px 6px}
+.shint b{color:var(--accent-ink)}
+.sres{display:flex;flex-direction:column;gap:6px}
+.backdrop{position:fixed;inset:0;background:rgba(15,23,42,.25);opacity:0;pointer-events:none;transition:opacity .3s;z-index:35}
+.backdrop.on{opacity:1;pointer-events:auto}
+.item{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ihead{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--soft)}
+.tt{min-width:30px;height:22px;border-radius:6px;background:var(--accent);color:#fff;font-size:11.5px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;flex:none}
+.ihead .nm{font-weight:900;font-size:13px;flex:1;min-width:0}
+.ihead .sec{font-size:10px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:2px 7px;white-space:nowrap;flex:none}
+.leaf{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 9px;border-top:1px solid var(--line)}
+.leaf .lt{min-width:0}
+.leaf .lt small{display:block;font-size:10.5px;color:var(--mute);font-weight:700}
+.leaf .lt span{font-size:12.5px;font-weight:700}
+mark{background:#fef08a;color:inherit;border-radius:3px;padding:0 1px}
+.sc{min-width:32px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;color:#fff;padding:0 6px;font-size:13px;flex:none;white-space:nowrap}
+.sc.txt{background:#e0f2fe;color:#075985;font-size:10.5px;white-space:normal;text-align:center;max-width:120px;height:auto;min-height:26px;padding:3px 6px;line-height:1.2}
+.more,.noresult{font-size:12px;color:var(--mute);text-align:center;padding:6px}
+
+/* Nhập liệu */
+.calc{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media(min-width:760px){.calc{grid-template-columns:1fr 1fr;align-items:start}}
+.card{border:1.5px solid var(--line);border-radius:var(--r);padding:10px 12px 12px;background:var(--card);box-shadow:var(--shadow)}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ch h3{display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:var(--accent-ink)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--soft);border-radius:10px;padding:3px;gap:3px}
+.seg button{padding:6px 10px;border-radius:8px;font-weight:800;font-size:12.5px;color:var(--mute);line-height:1.15;transition:background .15s,color .15s}
+.seg button.on{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.15)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 10px;align-items:start}
+.field{min-width:0}
+.lr{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;min-height:22px}
+.lr label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.unit{position:relative}
+.unit input,.ro{width:100%;height:42px;border:1.5px solid var(--line);border-radius:10px;padding:0 44px 0 11px;font-size:19px;font-weight:900;outline:none;background:#fff}
+.unit input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11.5px;font-weight:800;color:var(--mute)}
+.ro{display:flex;align-items:center;background:var(--soft);border-style:dashed;color:var(--ink)}
+.ro.empty{color:#94a3b8}
+.sub{font-size:11px;color:var(--accent-ink);font-weight:700;margin-top:3px;line-height:1.3}
+.sub:empty{display:none}
+.sub.warn{color:#c2410c}
+.chip{min-width:26px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;color:#fff;padding:0 6px;font-size:12.5px;flex:none;
+  transform:scale(1);transition:transform .2s var(--ease),background .2s}
+.chip.pop{animation:pop .3s var(--ease)}
+@keyframes pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+.c1,.c2,.c3{background:var(--ok)!important}.c4{background:var(--s4)!important}.c5{background:var(--s5)!important}.c6{background:var(--s6)!important}
+.c0{background:#e2e8f0;color:#94a3b8}
+.cM{background:#7c3aed}
+
+.subopt{margin-top:8px}
+.subopt .lbl{font-size:11px;font-weight:800;color:var(--mute);margin-bottom:4px}
+
+footer{padding:12px 72px calc(12px + env(safe-area-inset-bottom));text-align:center;border-top:1px solid var(--line);background:var(--card)}
+footer p{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+
+/* Điểm kết luận cạnh tên thẻ */
+.hsc{min-width:30px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;padding:0 7px;letter-spacing:0}
+.hsc.c0{background:#e2e8f0;color:#94a3b8}
+.hsc.pop{animation:pop .3s var(--ease)}
+/* Nút làm lại ở đáy */
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 22px rgba(13,148,136,.4);transition:transform .2s var(--ease)}
+.fab svg{width:22px;height:22px;transition:transform .45s var(--ease)}
+.fab:active{transform:scale(.92)}
+.fab.spin svg{transform:rotate(-360deg)}
+</style>
+</head>
+<body>
+
+
+
+<div class="backdrop" id="backdrop"></div>
+<button class="fab" id="resetBtn" aria-label="Làm lại" title="Làm lại">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+</button>
+
+<main>
+  <!-- TRA CỨU BỆNH -->
+  <div class="sw" id="sw">
+    <div class="scard" id="scard">
+      <div class="sbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="text" placeholder="Tìm nhanh" autocomplete="off" enterkeyhint="search">
+        <button class="clr" id="qClr" aria-label="Xóa" hidden>×</button>
+      </div>
+      <div class="panel"><div><div class="pin">
+        <div class="shint">Phụ lục I, TT 88/VBHN-BQP. Gõ không dấu cũng được. <b>T</b> = bệnh tạm thời.</div>
+        <div class="sres" id="qRes"></div>
+      </div></div></div>
+    </div>
+  </div>
+
+  <!-- THỂ LỰC + HA, MẠCH -->
+  <section class="calc">
+    <div class="card">
+      <div class="ch">
+        <h3>Thể lực <b class="hsc" id="hTL">--</b></h3>
+        <div class="seg" id="segSex" data-value="m">
+          <button data-v="m" class="on">Nam</button>
+          <button data-v="f">Nữ</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field"><div class="lr"><label for="h">Chiều cao</label><span class="chip c0" id="sH">--</span></div>
+          <div class="unit"><input id="h" inputmode="decimal" placeholder="--"><span>cm</span></div>
+          <div class="sub" id="hSub"></div></div>
+        <div class="field"><div class="lr"><label for="w">Cân nặng</label><span class="chip c0" id="sW">--</span></div>
+          <div class="unit"><input id="w" inputmode="decimal" placeholder="--"><span>kg</span></div>
+          <div class="sub" id="wSub"></div></div>
+        <div class="field" id="chestField"><div class="lr"><label for="ch">Vòng ngực</label><span class="chip c0" id="sC">--</span></div>
+          <div class="unit"><input id="ch" inputmode="decimal" placeholder="--"><span>cm</span></div>
+          <div class="sub" id="chSub"></div></div>
+        <div class="field"><div class="lr"><label>BMI</label><span class="chip c0" id="sB">--</span></div>
+          <div class="unit"><div class="ro empty" id="bmiV">--</div><span>kg/m²</span></div>
+          <div class="sub" id="bmiSub"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><h3>Huyết áp, mạch <b class="hsc" id="hNK">--</b></h3></div>
+      <div class="grid2">
+        <div class="field"><div class="lr"><label for="sys">HA tâm thu</label><span class="chip c0" id="sS">--</span></div>
+          <div class="unit"><input id="sys" inputmode="numeric" placeholder="--"><span>mmHg</span></div></div>
+        <div class="field"><div class="lr"><label for="dia">HA tâm trương</label><span class="chip c0" id="sD">--</span></div>
+          <div class="unit"><input id="dia" inputmode="numeric" placeholder="--"><span>mmHg</span></div></div>
+        <div class="field"><div class="lr"><label for="pulse">Mạch</label><span class="chip c0" id="sP">--</span></div>
+          <div class="unit"><input id="pulse" inputmode="numeric" placeholder="--"><span>l/ph</span></div>
+          <div class="sub" id="pSub"></div></div>
+      </div>
+      <div class="subopt" id="lianWrap" hidden>
+        <div class="lbl">Mạch 50-54: nghiệm pháp Lian</div>
+        <div class="seg" id="segLian" data-value="none">
+          <button data-v="none" class="on">Chưa làm</button>
+          <button data-v="good">Bình thường</button>
+          <button data-v="bad">Xấu</button>
+        </div>
+      </div>
+      <div class="subopt" id="sevWrap" hidden>
+        <div class="lbl">Mạch ≥ 100 hoặc &lt; 50: bác sĩ chọn điểm</div>
+        <div class="seg" id="segSev" data-value="5">
+          <button data-v="5" class="on">Điểm 5</button>
+          <button data-v="6">Điểm 6</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Phòng Kế hoạch tổng hợp - BV Đa khoa Lãnh Binh Thăng</p>
+</footer>
+
+<!--
+  DỮ LIỆU BỆNH TẬT - Phụ lục I, mục II và III (TT 88/VBHN-BQP, theo Phu luc.doc)
+  Đã bỏ mục 1 (thị lực), 30 (sức nghe), 99 (HA), 101 (mạch).
+  Cú pháp:  #Tên nhóm  |  TT|Tên mục|Điểm  |  -Mức 1|Điểm  |  +Mức 2|Điểm  |  *Mức 3|Điểm
+-->
+<script type="text/plain" id="db">
+#Mắt
+2|Cận thị|
+-Cận thị dưới -3D|Theo mục 1.2
+-Cận thị từ -3D đến dưới -4D|4
+-Cận thị từ -4D đến dưới -5D|5
+-Cận thị từ -5D trở lên|6
+-Cận thị đã phẫu thuật|Theo mục 1.1, tăng 1 điểm
+3|Viễn thị|
+-Viễn thị dưới +1,5D|Theo mục 1.1
+-Viễn thị từ +1,5D đến dưới +3D|4
+-Viễn thị từ +3D đến dưới +4D|5
+-Viễn thị từ +4D đến dưới +5D|6
+-Viễn thị đã phẫu thuật|Theo mục 1.1, tăng 1 điểm
+4|Loạn thị|
+-Loạn thị sinh lý hoặc < 1D|2
+-Loạn thị ≥ 1D|3
+-Loạn thị đã phẫu thuật, hết loạn thị|Theo mục 1.1, tăng 1 điểm
+5|Mộng thịt|
+-Mộng thịt độ 1, độ 2|2
+-Mộng thịt độ 3|4
+-Mộng thịt độ 4|5
+-Mộng thịt đã mổ tái phát, gây dính|5
+6|Bệnh giác mạc|
+-Sẹo giác mạc đơn thuần, mỏng, nhỏ ở ngoài vùng trung tâm|Theo mục 1.1, tăng 1 điểm
+-Sẹo giác mạc có dính mống mắt|6
+-Viêm giác mạc|
++Nhẹ|3T
++Vừa|4T
+7|Quặm và lông siêu ở mi mắt|
+-Không ảnh hưởng đến thị lực|2
+-Có ảnh hưởng đến thị lực|Theo mục 1.1, tăng 1 điểm
+8|Viêm kết mạc|
+-Viêm kết mạc cấp|2T
+-Viêm kết mạc mùa xuân|4
+9|Lệ đạo|
+-Viêm lệ đạo cấp tính|3T
+-Viêm tắc lệ đạo mạn tính|
++Nếu ở 1 bên mắt|5
++Nếu ở 2 bên mắt|6
+10|Vận nhãn|
+-Lác cơ năng|
++Không gây giảm thị lực|3
++Có giảm thị lực (chỉnh kính tối đa thị lực ≤ 8/10)|5
+-Lác do liệt 1 hay nhiều cơ vận nhãn (lác trong, ngoài, lên, xuống)|6
+11|Tật rung giật nhãn cầu (bệnh lý hoặc bẩm sinh)|5
+12|Những bệnh ở mi mắt và hốc mắt|
+-Các vết sẹo làm biến dạng mi mắt: Hở mi; Dính mi cầu; Lật mi, lộn mi|6
+-Sụp mi mắt bẩm sinh hoặc bệnh lý|
++Độ I|2
++Độ II|3
++Độ III|5
++Độ IV|6
+-Những bệnh ở hốc mắt|6
+13|Mù màu|
+-Mù màu trục xanh lá - đỏ mức độ nhẹ|3
+-Mù màu trục xanh lá - đỏ mức độ nặng|4-5
+-Mù màu hoàn toàn hoặc mù màu khác|6
+14|Viêm võng mạc sắc tố|6
+15|Đục thủy tinh thể bẩm sinh|6
+16|Những bệnh khác về mắt|
+-Tăng nhãn áp|6
+-Đục thể thủy tinh trẻ em, người trẻ và trước tuổi già|6
+-Lệch thể thủy tinh|6
+-Viêm màng bồ đào toàn bộ (dính bịt đồng tử)|6
+-Bong võng mạc|6
+-Bệnh lý thị thần kinh|6
+-Bệnh võng mạc do đái tháo đường|6
+-Tổn thương võng mạc do bệnh tăng huyết áp|6
+#Răng - Hàm - Mặt
+17|Răng sâu|
+-Chỉ có răng sâu độ 1 - 2 (không có răng sâu độ 3), không hoặc ít ảnh hưởng sức nhai|2
+-Có ≤ 3 răng sâu độ 3|2
+-Có 4 - 5 răng sâu độ 3|3T
+-Có 6 răng sâu độ 3|4T
+-Có 7 răng sâu độ 3 trở lên|5T
+18|Mất răng|
+-Còn đủ 28 răng (không kể răng khôn)|1
+-Mất răng đã có phục hình đảm bảo chức năng và thẩm mỹ|2
+-Mất ≤ 3 răng, trong đó có 1 răng hàm lớn hoặc răng cửa, sức nhai còn 85% trở lên|2
+-Mất 4 răng, trong đó có ≤ 2 răng hàm lớn hoặc răng cửa, sức nhai còn 70% trở lên|3
+-Mất 5 - 7 răng, trong đó có ≤ 3 răng hàm lớn hoặc răng cửa, sức nhai còn 50% trở lên|4
+-Mất trên 7 răng, trong đó có > 3 răng hàm lớn hoặc răng cửa, sức nhai còn < 50%|5
+19|Viêm lợi|
+-Viêm lợi ở ≤ 5 răng, chưa có túi mủ sâu|1
+-Viêm lợi ở ≥ 6 răng, chưa có túi mủ sâu|2
+20|Viêm quanh răng (nha chu viêm)|
+-Viêm quanh răng đã điều trị ổn định vẫn còn túi lợi sâu|3T
+-Viêm quanh răng ở < 5 răng, răng lung lay độ 2 - 3 - 4|3T
+-Viêm quanh răng từ 6 - 11 răng trở lên, răng lung lay độ 2 - 3 - 4|4T
+-Viêm quanh răng từ 12 răng trở lên|5T
+21|Viêm tủy, tủy hoại tử, viêm quanh cuống răng|
+-1 - 2 răng bị viêm tủy, tủy hoại tử hoặc viêm quanh cuống răng|
++Đang còn viêm|2T
++Đã điều trị ổn định|2
+-3 - 4 răng bị viêm tủy, tủy hoại tử hoặc viêm quanh cuống răng|
++Đang còn viêm|3T
++Đã điều trị ổn định|3
+-5 - 6 răng bị viêm tủy, tủy hoại tử hoặc viêm quanh cuống răng|
++Đang còn viêm|4T
++Đã điều trị ổn định|4
+-Có trên 6 răng bị viêm tủy, tủy hoại tử hoặc viêm quanh cuống răng|5
+22|Biến chứng răng khôn|
+-Biến chứng đã điều trị tốt|1-2
+-Biến chứng đang chữa|2T
+23|Viêm loét niêm mạc ở miệng, lưỡi|
+-Viêm loét cấp tính|3T
+-Viêm loét mạn tính đã điều trị nhiều lần không khỏi|4
+24|Viêm tuyến nước bọt|
+-Viêm tuyến mang tai|
++Đã điều trị khỏi|2
++Viêm tuyến mang tai cấp|3T
++Viêm tuyến mang tai mạn tính 1 bên đã ổn định|3
++Viêm tuyến mang tai mạn tính 2 bên đã ổn định|4
++Viêm tuyến mang tai mạn tính 1 hoặc 2 bên chưa ổn định|5
++Sỏi ống Stenon|5
+-Viêm tuyến nước bọt dưới hàm|
++Đã điều trị khỏi|2
++Viêm cấp|4T
++Viêm mạn, xơ hóa, chưa ổn định|5
++Sỏi ống Wharton|5
+25|Viêm khớp thái dương hàm|
+-Viêm cấp tính|3T
+-Viêm mạn tính|4
+26|Xương hàm gãy|
+-Đã liền tốt, khớp cắn không di lệch hoặc di lệch ít|2
+-Khớp cắn di lệch nhiều, ảnh hưởng tới sức nhai|4
+27|Khe hở môi, khe hở vòm miệng|
+-Khe hở môi 1 bên, không toàn bộ|
++Đã phẫu thuật, không ảnh hưởng tới thẩm mỹ và chức năng|2
++Chưa phẫu thuật|3
+-Khe hở môi 1 bên toàn bộ hoặc khe hở môi không toàn bộ 2 bên|
++Đã phẫu thuật tạo hình, ảnh hưởng ít đến thẩm mỹ và phát âm|3
++Chưa phẫu thuật|4T
+-Khe hở môi toàn bộ 2 bên|
++Đã phẫu thuật tạo hình|4
++Chưa phẫu thuật|5T
+-Khe hở vòm|
++Khe hở vòm mềm|3
++Khe hở vòm toàn bộ|5
+-Khe hở môi kèm theo khe hở vòm|6
+28|Bệnh lý và u vùng mặt|
+-Các bệnh lý lành tính đã điều trị ổn định (nang chân răng, nang nhầy...)|2
+-U lành đã phẫu thuật ổn định không ảnh hưởng đến chức năng (torus, u lợi xơ...)|3
+-U lành đã phẫu thuật ổn định có biến dạng vùng mặt (u men, u xương xơ, u máu, u bạch mạch...)|5
+-U lành tính chưa phẫu thuật, không gây biến dạng vùng mặt|3T
+-U lành tính chưa phẫu thuật, có gây biến dạng vùng mặt hoặc ảnh hưởng chức năng|5T
+-U ác tính vùng hàm mặt|6
+29|Sai lệch khớp cắn|
+-Không ảnh hưởng chức năng và thẩm mỹ|2
+-Ảnh hưởng đến chức năng và thẩm mỹ (tùy mức độ ảnh hưởng)|3-5
+-Đang điều trị nắn chỉnh răng|3T
+29|Phẫu thuật thẩm mỹ có can thiệp vào xương vùng hàm mặt|
+-Kết quả tốt, đã liền xương trên 6 tháng|2
+-Còn phương tiện kết xương|3T
+#Tai - Mũi - Họng
+31|Tai ngoài|
+-Ống tai ngoài|
++Hẹp một phần ống tai ngoài|3
++Hẹp toàn bộ ống tai ngoài|4
++Tịt ống tai ngoài|5
+-Vành tai|
++Không có vành tai|5
++Không có cấu trúc vành tai (chỉ có nụ thịt)|4
++Mất một số cấu trúc giải phẫu|3
++Cấu trúc đầy đủ nhưng nhỏ hơn tai bên bình thường|2
+-Viêm tai ngoài cấp tính|3T
+-Polyp tai ngoài|4
+32|Tai giữa|
+-Viêm tai giữa cấp tính|4T
+-Viêm tai giữa thanh dịch|4T
+-Viêm tai giữa mạn tính hòm nhĩ khô, sạch|
++Màng nhĩ thủng nhỏ hoặc trung bình|4
++Màng nhĩ thủng rộng|5
+-Viêm tai giữa mạn tính có thủng màng nhĩ, có chảy chất nhầy hoặc mủ|
++Thủng nhỏ hoặc trung bình|5
++Thủng rộng|6
+-Viêm tai giữa mạn tính có thủng, có chảy mủ thối (Cholesteatome)|6
+-Polyp tai giữa|5
+33|Xương chũm|
+-Viêm tai xương chũm cấp tính|5T
+-Viêm tai xương chũm mạn tính|5
+-Viêm tai xương chũm có cholesteatoma có biến chứng nội sọ|6
+-Viêm tai xương chũm đã phẫu thuật mở hang chũm - thượng nhĩ có vá màng nhĩ|
++Màng nhĩ đóng kín|4
++Màng nhĩ thủng, đáy nhĩ sạch|5
++Màng nhĩ thủng, còn chảy mủ|6
+-Viêm tai xương chũm đã mổ tiệt căn|
++Hốc mổ khô|5
++Hốc mổ còn chảy mủ|6
+34|Tai trong|
+-Ù tai kèm giảm sức nghe đường tiếp nhận|5
+35|Rò luân nhĩ|
+-Rò luân nhĩ không biến chứng|2
+-Rò luân nhĩ biến chứng nhiễm trùng|3T
+-Rò luân nhĩ biến chứng đã phẫu thuật kết quả tốt|2
+36|Mũi|
+-Mũi, hố mũi, vách ngăn bị lệch vẹo, dị dạng|
++Không có rối loạn hô hấp và phát âm|3
++Đã có rối loạn hô hấp, phát âm, nuốt mức độ nhẹ|4-5
++Có rối loạn chức năng hô hấp quan trọng, rối loạn phát âm|6
+-Viêm mũi cấp tính|3T
+-Viêm mũi dị ứng|2
+-Viêm mũi mạn tính đơn thuần|
++Không có rối loạn chức năng hô hấp|2
++Có rối loạn chức năng hô hấp rõ hoặc mất ngửi|4
++Rối loạn chức năng hô hấp|5
+-Polyp mũi|
++Viêm mũi xoang mạn tính có polyp|5
++Viêm mũi xoang mạn tính có polyp 1 bên độ I-II|4
++Viêm mũi xoang mạn tính có polyp 1 bên độ III-IV|5
++Viêm mũi xoang mạn tính có polyp mũi 2 bên độ I-II|5
++Viêm mũi xoang mạn tính có polyp mũi 2 bên độ III-IV|6
+37|Họng|
+-Viêm họng cấp tính|2T
+-Viêm họng mạn tính đơn thuần, thể trạng tốt|2
+-Viêm họng mạn tính hay ho, sốt gây khó thở ảnh hưởng đến thể trạng|4
+38|Amidan|
+-Viêm amidan cấp|2T
+-Viêm amidan mạn tính không quá phát hoặc quá phát độ I|2
+-Amidan viêm mạn tính quá phát độ II-III chưa có rối loạn chức năng hô hấp|3
+-Amidan viêm mạn tính quá phát độ II-III có rối loạn chức năng hô hấp (ngừng thở khi ngủ, khó thở...)|4
+-Amidan viêm mạn tính quá phát độ IV|5
+-Amidan viêm mạn tính đã được cắt bỏ|2
+39|Chảy máu cam|
+-Chảy máu cam tái phát chưa có thiếu máu hoặc thiếu máu nhẹ|4
+-Chảy máu cam tái phát gây thiếu máu trung bình|5
+-Chảy máu cam tái phát gây thiếu máu nặng|6
+40|Thanh quản|
+-Viêm thanh quản cấp tính|2T
+-Viêm thanh quản mạn tính|
++Không có rối loạn phát âm quan trọng như tiếng nói còn phân biệt được, thể trạng tốt|3
++Có rối loạn phát âm quan trọng như tiếng nói không phân biệt được hoặc phân biệt khó, thể trạng kém|4
+-Liệt các cơ khép - mở dây thanh và liệt dây thần kinh hồi quy|5
+-Khàn tiếng đơn thuần, không liệt dây thanh, không có tổn thương hoặc chỉ tổn thương nhẹ ở niêm mạc dây thanh|3
+-Khàn tiếng do các khối u lành tính ở dây thanh như: polyp, hạt xơ dây thanh, u nang, u nhú (papilloma) dây thanh...|5
+-Nói lắp|
++Lặp từ (VD: Con bò bò... bò sữa)|3
++Kéo dài từ (VD: C...o...n bò sữa)|4
++Mất từ (VD: Con.... sữa)|5
+-Nói ngọng|
++Người nghe hiểu 75% đến dưới 100% từ|3
++Người nghe hiểu 50% đến dưới 75% từ|4
++Người nghe hiểu 20% đến dưới 50% từ|5
++Người nghe hiểu dưới 20% từ|6
+-Chấn thương hay bệnh lý gây tổn thương cấu trúc thanh quản|
++Không có rối loạn giọng|5
++Có rối loạn giọng|6
+41|Xoang mặt|
+-Viêm mũi xoang cấp tính|4T
+-Viêm mũi xoang cấp tính điều trị khỏi hoàn toàn|2
+-Viêm xoang hàm mạn tính|4
+-Viêm xoang trán, xoang sàng mạn tính|5
+-Viêm mũi xoang mạn tính|5
+42|Liệt mặt không hồi phục do viêm tai xương chũm|6
+43|Khối u vùng mũi xoang, họng thanh quản, tai ngoài, tai giữa|
+-Không nghi ngờ ác tính|5
+-Có nghi ngờ ác tính|6
+44|Nang giáp móng (giáp lưỡi)|
+-Chưa phẫu thuật|3T
+-Phẫu thuật kết quả tốt, không tái phát|2
+-Phẫu thuật kết quả kém, tái phát nang|4
+#Thần kinh
+45|Nhức đầu thành cơn, dai dẳng, kéo dài, ảnh hưởng đến lao động|
+-Trạng thái Migraine|4
+-Migraine biến chứng|5
+-Đau đầu chuỗi mạn tính|4
+-Đau đầu căng thẳng mạn tính|4
+46|Động kinh|
+-Đã hết cơn (lâm sàng và cận lâm sàng)|5
+-Còn cơn (lâm sàng và hoặc cận lâm sàng)|6
+47|Tăng tiết mồ hôi (R61.0 khu trú, R61.1 toàn thân)|
+-Mức độ nhẹ|2
+-Mức độ vừa|4
+-Mức độ nặng|5
+48|Đái dầm không thực tổn|5
+49|Di tinh nhiều, ảnh hưởng tới sức khỏe|4
+50|Rối loạn tiền đình trung ương|5
+51|Rối loạn tiền đình ngoại biên|4-5
+52|Rối loạn phối hợp vận động và thăng bằng kiểu tiểu não|5
+53|Liệt thần kinh mặt ngoại vi (Liệt Bell)|
+-Còn di chứng méo miệng khi cười, mắt nhắm kín|3
+-Còn di chứng méo miệng thường xuyên, mắt nhắm không kín|5
+54|Liệt thần kinh ngoại vi|
+-Liệt 1 trong các dây thần kinh quay, giữa|5
+-Liệt dây thần kinh trụ|4
+-Liệt dây thần kinh hông to|6
+-Liệt 1 trong các dây thần kinh hông khoeo trong, hông khoeo ngoài|5
+-Mất hoặc giảm khả năng vận động ở một phần chi thể|
++Ít ảnh hưởng tới lao động, sinh hoạt|4
++Ảnh hưởng nhiều đến lao động, sinh hoạt|5
+-Mất hoàn toàn khả năng lao động ở 1 chi hoặc nửa người|6
+55|Di chứng tổn thương sọ não, tủy sống: Liệt chân tay, hạn chế khả năng lao động rõ rệt|6
+56|Bệnh rễ và các đám rối thần kinh|
+-Ảnh hưởng ít đến vận động và cảm giác|4
+-Ảnh hưởng nhiều đến vận động và cảm giác|5
+57|Bệnh cơ (Myopathie)|
+-Có teo cơ nặng, ảnh hưởng rõ đến khả năng lao động|6
+-Teo cơ nhẹ, ảnh hưởng ít đến vận động|4
+58|Nhược cơ (Myasthénia)|6
+59|Các rối loạn TIC|4
+60|Đau lưng|
+-Gai đôi cột sống|4
+-Thoái hóa cột sống|
++Mức độ nhẹ: thoái hóa < 3 đốt sống, không có chèn ép thần kinh|3
++Mức độ vừa: thoái hóa 3-6 đốt sống, không có chèn ép thần kinh|4
++Mức độ nặng: > 6 đốt sống hoặc có chèn ép thần kinh|5
+-Thoát vị đĩa đệm|
++Mức độ nhẹ: đau tại chỗ, không có chèn ép thần kinh, ảnh hưởng lao động ít|4
++Mức độ vừa: H/c thắt lưng hông, ảnh hưởng lao động nhiều|5
++Mức độ nặng: Có chèn ép thần kinh, mất khả năng lao động|6
+61|Đau vùng cổ gáy do rối loạn liên quan đến cột sống cổ|
+-Thoái hóa cột sống cổ|
++Mức độ nhẹ: thoái hóa < 2 đốt sống, không có chèn ép thần kinh|3
++Mức độ vừa: thoái hóa 2-4 đốt sống, không có chèn ép thần kinh|4
++Mức độ nặng: > 4 đốt sống hoặc có chèn ép thần kinh|5
+-Thoát vị đĩa đệm cột sống cổ|
++Mức độ nhẹ: đau tại chỗ, không có chèn ép thần kinh, ảnh hưởng lao động ít|4
++Mức độ vừa: Có chèn ép thần kinh, ảnh hưởng lao động nhiều|5
++Mức độ nặng: Có chèn ép thần kinh, mất khả năng lao động|6
+62|Chấn thương sọ não|
+-Chấn thương sọ não cũ không để lại di chứng|3
+-Chấn thương sọ não, vết thương cũ không thấu não để lại di chứng suy nhược thần kinh nhẹ|
++Nếu điện não đồ không biến đổi|4
++Nếu điện não đồ có biến đổi|5
+-Chấn thương sọ não cũ, vết thương thấu não cũ còn để lại di chứng rõ rệt về thần kinh hoặc tâm thần hoặc khuyết xương sọ|6
+#Tâm thần
+63|Rối loạn trầm cảm|
+-Mức độ nhẹ|4
+-Mức độ vừa|5
+-Mức độ nặng|6
+64|Các mặt bệnh tâm thần|
+-Chậm phát triển tâm thần|
++Mức độ trầm trọng|6
++Mức độ nặng|6
++Mức độ vừa|5
++Mức độ nhẹ|5
+-Các rối loạn loạn thần cấp và nhất thời|
++Không hồi phục|6
++Hồi phục không hoàn toàn|5
++Hồi phục hoàn toàn|4
+-Các trạng thái hoang tưởng và loạn thần không đặc hiệu|6
+-Các rối loạn tri giác|6
+-Các rối loạn về phân định giới tính|4
+-Các rối loạn về ưa chuộng tình dục|4
+65|Tâm thần phân liệt (các thể)|6
+66|Các rối loạn tâm thần do rượu|
+-Các rối loạn tâm thần do rượu|6
+-Nghiện rượu mạn tính|6
+-Loạn thần do rượu (hoang tưởng, ảo giác, sảng, các bệnh não thực tổn do rượu)|6
+-Hội chứng cai rượu|6
+67|Rối loạn tâm thần và hành vi do sử dụng ma túy (opiate, chất dạng amphetamin, cocain, cần sa, chất kích thần khác)|6
+68|Loạn thần do thuốc|
+-Hội chứng cai các thuốc gây nghiện, trạng thái hoang tưởng, ảo giác, loạn thần do ngộ độc thuốc|6
+-Lệ thuộc thuốc gây nghiện|5
+69|Rối loạn phân liệt cảm xúc|
+-Thể điển hình, cường độ mạnh, cơn kéo dài, mau tái phát|6
+-Thể trung bình, cơn thưa 1 - 3 năm/lần hoặc thể nhẹ chu kỳ cơn 3 - 5 năm|6
+-Hưng cảm|6
+-Trầm cảm|6
+-Hỗn hợp|6
+-Không biệt định|6
+70|Rối loạn hành vi ở thanh thiếu niên|
+-Thể nặng và cố định|6
+-Trung bình|5
+71|Rối loạn nhân cách|
+-Các rối loạn nhân cách đặc hiệu|5
+-Các rối loạn nhân cách hỗn hợp và các loại nhân cách khác nhau|4
+72|Rối loạn giấc ngủ không thực tổn|
+-Nếu có bệnh cơ thể đi kèm|5
+-Nếu không có bệnh cơ thể đi kèm|3
+73|Rối loạn lo âu|
+-Đã hồi phục|4
+-Đang tiến triển|5
+-Hay tái phát (từ 2 lần trở lên)|6
+74|Rối loạn phân li (chuyển di)|
+-Đã hồi phục sinh hoạt bình thường|4
+-Đang tiến triển|5
+-Hay tái phát (tái phát từ 2 lần trở lên)|6
+75|Các rối loạn tâm thần khác do tổn thương và rối loạn chức năng não và bệnh cơ thể|
+-Đã hồi phục|4
+-Phục hồi không hoàn toàn|5
+-Không hồi phục|6
+76|Rối loạn cảm xúc lưỡng cực|
+-Giai đoạn (hưng cảm, trầm cảm, hỗn hợp)|6
+-Rối loạn cảm xúc lưỡng cực hiện tại thuyên giảm|5
+#Tiêu hóa
+77|Bệnh thực quản|
+-Viêm thực quản trào ngược|3
+-Viêm thực quản trào ngược điều trị khỏi hoàn toàn|2
+-Bệnh co thắt tâm vị|5
+-Giãn thực quản|5
+-Hẹp thực quản|5
+-Thoát vị hoành|5
+-Giãn tĩnh mạch thực quản|6
+-Ung thư thực quản|6
+78|Bệnh dạ dày, tá tràng|
+-Viêm dạ dày cấp|3T
+-Viêm dạ dày cấp điều trị khỏi hoàn toàn|2
+-Viêm dạ dày, tá tràng mạn tính|4
+-Loét dạ dày, tá tràng chưa có biến chứng|4T
+-Loét dạ dày, tá tràng có biến chứng (hẹp môn vị, chảy máu... chưa điều trị khỏi)|6
+-Loét dạ dày, tá tràng đã điều trị lành bằng nội khoa|3
+-Loét dạ dày, tá tràng đã điều trị lành bằng phẫu thuật|5
+-Túi thừa dạ dày, tá tràng ảnh hưởng tới sức khỏe ít hay nhiều|4
+-Ung thư dạ dày|6
+-U lành tính dạ dày|
++Đã phẫu thuật cắt bỏ|3
++Chưa phẫu thuật|5
+79|Ruột non|
+-Thủng ruột non do các nguyên nhân phải phẫu thuật|
++Kết quả không ảnh hưởng tới tiêu hóa|4
++Có ảnh hưởng tới tiêu hóa và sinh hoạt|5
+-Tắc ruột cơ học đã phẫu thuật|
++Kết quả tốt|4
++Nếu vẫn còn rối loạn tiêu hóa|5
+-Túi thừa, polyp ruột non|5
+-U ruột non|6
+80|Viêm ruột thừa|
+-Viêm ruột thừa đã phẫu thuật, kết quả tốt (sau phẫu thuật > 4 tuần; nếu nhiễm trùng vết mổ thì sau khi hết nhiễm trùng > 4 tuần)|3
+-Có biến chứng, bán tắc ruột, sổ bụng hoặc thoát vị thành bụng|5
+81|Thoát vị thành bụng các loại|
+-Đã được phẫu thuật tốt, ổn định trên 1 năm|3
+-Chưa được phẫu thuật|5T
+-Thoát vị thành bụng tái phát|5
+82|Phẫu thuật mở bụng thăm dò|
+-Liền sẹo tốt và trên 1 năm, không có di chứng|3
+-Nếu sẹo nhăn nhúm, sổ bụng hoặc thoát vị thành bụng|5
+-Có di chứng|6
+83|Phẫu thuật nội soi qua thành bụng|
+-Không can thiệp tạng trong ổ bụng, đã lành sẹo|2
+-Đã can thiệp nội tạng, không di chứng|3
+-Đã can thiệp nội tạng, có di chứng (tùy mức độ)|4-6
+84|Bệnh đại, trực tràng|
+-Viêm đại tràng hoặc viêm trực tràng cấp|3T
+-Hội chứng ruột kích thích|
++Mức độ nhẹ|3
++Mức độ vừa|4
++Mức độ nặng|5
+-Viêm loét trực, đại tràng xuất huyết|
++Nhẹ|5T
++Vừa, nặng|6
+-Các bệnh lành tính của đại tràng phải can thiệp phẫu thuật|5
+-Lao ruột|5
+-Ung thư đại tràng, trực tràng|6
+-Túi thừa đại, trực tràng|5
+-Polyp trực, đại tràng (Polypose Rectocolique)|5
+-Polyp trực tràng (Polype rectal) có cuống nhỏ điều trị hết được|
++Đã cắt bỏ|2
++Chưa cắt bỏ|5T
+-Polyp trực tràng chảy máu|6
+-Phình đại tràng bẩm sinh|
++Đã điều trị kết quả tốt|3
++Chưa điều trị|5T
+85|Bệnh hậu môn - trực tràng|
+-Rò hậu môn|
++Đơn giản đã điều trị khỏi|2
++Đơn giản chưa điều trị|3T
++Rò hậu môn phức tạp|5
+-Sa trực tràng|5
+-Nứt hậu môn|
++Đã điều trị tốt|3
++Nhiễm trùng nhiều lần|4
+-Áp xe cạnh hậu môn|
++Đã điều trị khỏi|3
++Chưa điều trị hoặc tái phát|5T
+-U nhú hậu môn (papilloma)|
++Đã điều trị khỏi|3
++Chưa điều trị hoặc tái phát|4T
+86|Trĩ|
+-Trĩ ngoại|
++1 búi kích thước dưới 0,5 cm|2
++1 búi kích thước từ 0,5 cm đến 1 cm|3
+-Trĩ nội hoặc trĩ hỗn hợp 1 búi nhỏ dưới 0,5 cm|3
+-Trĩ nội, trĩ ngoại, hoặc trĩ hỗn hợp nhiều búi (2 búi trở lên) kích thước từ 0,5 cm đến 1 cm|4
+-Trĩ đã phẫu thuật tốt|3
+-Trĩ nhiều búi, có búi to trên 1 cm, búi trĩ lồi ra không tự co lên được|5T
+-Trĩ đã thắt, nay có búi trĩ tái phát|5T
+87|Bệnh gan|
+-Viêm gan cấp|5T
+-Viêm gan cấp đã lành trên 12 tháng, sức khỏe hồi phục tốt|3
+-Viêm gan cấp đã lành trên 12 tháng nhưng hồi phục chưa tốt, thử HBsAg (+)|5
+-Viêm gan virus B hoặc C mạn tính, giai đoạn không hoạt động|3
+-Người có anti-HCV dương tính, đã tự khỏi hoặc điều trị khỏi hoàn toàn, không di chứng|2
+-Viêm gan mạn tính thể tồn tại|4
+-Viêm gan mạn tính thể hoạt động|6
+-Ung thư gan nguyên phát hoặc thứ phát|6
+-Sán lá gan|
++Sán lá gan điều trị khỏi hoàn toàn|3
++Sán lá gan để lại di chứng (tùy mức độ)|4-6
+-Gan to chưa xác định được nguyên nhân|5T
+-Hội chứng vàng da chưa rõ nguyên nhân|5T
+-Xơ gan giai đoạn còn bù|5
+-Xơ gan giai đoạn mất bù|6
+-Đụng giập gan đã được điều trị bảo tồn, kết quả tốt|3
+-Áp xe (abcès) gan đã điều trị ổn định|4
+-Áp xe gan đã vỡ gây biến chứng tuy đã điều trị khỏi|5
+-Sỏi trong gan|
++01 viên kích thước ≤ 1 cm|3
++Nhiều viên hoặc 01 viên kích thước > 1 cm|4-5
+-Nang gan|
++Nang đơn độc đường kính < 1 cm|2
++Nang đơn độc đường kính từ 1 cm đến dưới 2 cm|3
++Nhiều nang hoặc đường kính ≥ 2 cm|4-5
+-U máu gan|
++U máu < 3 cm|3
++U máu 3 - 5 cm|4
++U máu > 5 cm|5
+-Ung thư gan|6
+88|Bệnh mật, túi mật|
+-Polyp túi mật|2
+-Sỏi túi mật, gây viêm đường mật|5T
+-Sỏi đường mật trong và ngoài gan, gây viêm nhiễm hoặc tắc mật|6
+-Áp xe đường mật|5T
+-Sỏi túi mật đơn độc, chưa mổ|4T
+-Sỏi túi mật đã cắt túi mật|
++Không ảnh hưởng tới sinh hoạt|4
++Có ảnh hưởng tới sinh hoạt|5
+-Viêm túi mật, viêm đường mật, viêm túi mật cấp do sỏi đơn độc đã mổ trên 1 năm, ổn định|4
+-Viêm đường mật do sỏi hoặc do nguyên nhân khác|5T
+-Sỏi ống mật chủ|6
+89|Tụy|
+-Viêm tụy cấp thể phù nề|
++Đã hồi phục|3
++Tái phát|5
+-Viêm tụy cấp thể hoại tử, xuất huyết|6
+-Viêm tụy mạn|5-6
+-Viêm tụy cấp đã điều trị nội khoa ổn định|4
+-Nang tụy|4
+-Sỏi tụy|5
+-Ung thư tụy|6
+90|Lách|
+-Lách to do các nguyên nhân|4
+-Nang lách|4
+-Áp xe lách|5
+-Vỡ lách do chấn thương phải phẫu thuật cắt lách|5
+-U lành tính của lách|4
+-Bệnh lý ác tính của lách|6
+91|Đảo ngược phủ tạng|5
+#Hô hấp
+92|Hội chứng và triệu chứng bệnh hô hấp|
+-Ho ra máu không rõ nguyên nhân|4T
+-Ho ra máu tái diễn kéo dài kèm theo ho khạc đờm, đau ngực|6
+-Tiếng cọ màng phổi rõ, kèm theo đau ngực (viêm màng phổi khô)|5T
+-Ran ẩm hoặc ran nổ nhiều ở 1 hoặc 2 đáy phổi kèm theo khái huyết hoặc khạc đờm nhiều|5T
+-Hội chứng 3 giảm (dày dính màng phổi)|5
+-Gù, vẹo cột sống, biến dạng xương ức và xương lồng ngực ảnh hưởng đến chức năng hô hấp|6
+-Di chứng sẹo lồng ngực do mổ tim, phổi hoặc sau chấn thương ngực cũ, ảnh hưởng đến chức năng hô hấp|6
+93|Các bệnh phế quản|
+-Viêm phế quản cấp|3T
+-Giãn phế quản nhẹ có chẩn đoán rõ, chưa có biến chứng|5
+-Viêm phế quản mạn tính|5
+-Bệnh phổi tắc nghẽn mạn tính (COPD)|6
+-Tâm phế mạn|6
+-Hen phế quản|
++Hen nhẹ không có biến chứng|5
++Hen trung bình và nặng, hen có biến chứng; hen phế quản kèm theo viêm xoang hàm mạn hoặc polyp mũi|6
+-Giãn phế quản|
++Giãn phế quản lan tỏa, chưa có biến chứng|5
++Giãn phế quản khu trú, chưa có biến chứng|4
++Giãn phế quản khu trú, có biến chứng|6
+94|Các bệnh nhu mô phổi|
+-Viêm phổi cấp do vi khuẩn, virus, Mycoplasma Pneumoniae|3T
+-Sán lá phổi, amip phổi|5T
+-Kén khí phổi|5
+-Hội chứng Loffler|3T
+-Bệnh bụi phổi|6
+-Xơ phổi kẽ lan tỏa hoặc xơ phổi|
++Không ảnh hưởng chức năng hô hấp, không biến chứng|4
++Ảnh hưởng chức năng hô hấp|5
++Có biến chứng giãn phế quản cạnh xơ; khí phế thũng cạnh xơ|6
+95|Các bệnh màng phổi|
+-Phế mạc viêm tràn dịch tơ huyết (Sero fibrineuse)|
++Không do lao, không có di chứng dày dính màng phổi|3T
++Do lao, có di chứng dày dính màng phổi|5T
+-Viêm mủ màng phổi không có di chứng dày dính màng phổi nhiều|6
+-Phế mạc viêm, tràn dịch mạn tính (kéo dài trên 2 tháng), phế mạc viêm tràn dịch máu (máu hút ra không đông), dưỡng chấp lồng ngực|6
+-Vôi hóa màng phổi|
++Ít (không ảnh hưởng chức năng hô hấp, FVC > 80%)|3
++Nhiều, diện rộng (ảnh hưởng chức năng hô hấp, FVC < 80%)|5
+-Xơ hóa lồng ngực hoặc dày dính rộng toàn bộ một bên màng phổi|6
+-Tràn khí màng phổi|
++Đã điều trị khỏi|3
++Tái phát nhiều lần|4
+96|Bệnh u phổi|5
+97|Bệnh lao phổi|
+-Nghi lao phổi (có hội chứng nhiễm độc lao, có tiền sử tiếp xúc và tiền sử lao)|4T
+-Ho ra máu do lao|5T
+-Lao phổi nhẹ mới mắc (lao thâm nhiễm, AFB (-) trong đờm bằng soi trực tiếp, không có hang lao)|5T
+-Lao phổi mới mắc nhưng có AFB (+) trong đờm bằng soi trực tiếp, có hang lao|6
+-Lao phổi kháng thuốc đơn kháng, đa kháng|6
+-Lao phổi đã khỏi hoặc hoàn thành điều trị trên 3 năm|
++Trước đây không có hang, hiện tại X-quang phổi bình thường, AFB (-), sức khỏe không bị ảnh hưởng|2
++Hiện nay có biến chứng lao, xơ phổi, suy hô hấp mạn tính, tâm phế mạn tính, giãn phế quản|6
+98|Lao ngoài phổi|
+-Lao hạch ngoại vi đã khỏi|4
+-Lao hạch cổ mạn tính hoặc rò mủ|5
+-Lao thanh quản đã khỏi|4
+-Lao màng bụng, lao xương|5
+-Lao tinh hoàn đã mổ, khỏi|4
+-Lao khớp đã điều trị khỏi|4
+-Lao ngoài phổi đang điều trị hoặc điều trị đủ phác đồ để lại di chứng|6
+-Lao não, màng não đã khỏi, không di chứng|5
+#Tim mạch
+100|Bệnh tăng huyết áp (phân độ theo QĐ 3192/QĐ-BYT)|
+-Tăng huyết áp độ 1 (HA tâm thu 140-159 và/hoặc tâm trương 90-99)|4
+-Tăng huyết áp độ 2 (HA tâm thu 160-179 và/hoặc tâm trương 100-109)|5
+-Tăng huyết áp độ 3 (HA tâm thu ≥ 180 và/hoặc tâm trương ≥ 110)|6
+102|Rối loạn dẫn truyền và nhịp tim|
+-Nhịp bộ nối, nhịp nhĩ|2
+-Block nhĩ thất độ I|4
+-Block nhĩ thất độ II|5
+-Block nhĩ thất độ III|6
+-Block nhánh phải|
++Không hoàn toàn|2
++Hoàn toàn, không có bệnh lý tim mạch thực tổn|3
++Hoàn toàn, có bệnh lý tim mạch thực tổn|4
+-Block nhánh trái|
++Không hoàn toàn|5
++Hoàn toàn|6
+-Block nhánh phải + block nhánh trái|6
+-Loạn nhịp ngoại tâm thu thất|
++Các NTT mất hoặc giảm đi sau vận động|2
++NTT thất thưa (1 - 9 nhịp/giờ)|3
++NTT thất trung bình (10 - 29 nhịp/giờ)|4
++NTT thất dày (≥ 30 nhịp/giờ)|5
++NTT thất đa ổ|6
++NTT thất từng chùm hoặc R/T|6
++NTT thất trong các bệnh tim thực thể|6
+-Loạn nhịp ngoại tâm thu nhĩ|5
+-Rung cuồng nhĩ, loạn nhịp hoàn toàn|6
+-Hội chứng nút xoang bệnh lý|5
+-Cơn nhịp nhanh kịch phát|6
+-Hội chứng Wolff-Parkinson-White (WPW)|6
+-Hội chứng Brugada|6
+103|Bệnh hệ thống mạch máu|
+-Viêm tắc động mạch các loại|6
+-Rối loạn vận mạch (bệnh Raynaud)|6
+-Viêm tắc tĩnh mạch nông hoặc sâu chi dưới|5
+104|Bệnh tim|
+-Bệnh tim bẩm sinh|
++Chưa gây rối loạn huyết động đáng kể|5
++Có rối loạn về huyết động|6
++Đã được can thiệp hoặc phẫu thuật trước 16 tuổi|4
+-Bệnh van tim|6
+-Viêm nội tâm mạc nhiễm khuẩn|6
+-Suy tim|6
+-Viêm cơ tim và các bệnh cơ tim|6
+-Thấp tim (thấp khớp cấp) và bệnh tim do thấp|6
+-Các bệnh màng ngoài tim|6
+-Các khối u tim|6
+#Cơ - Xương - Khớp
+105|Bệnh khớp|
+-Các bệnh khớp nhiễm khuẩn|5T
+-Lao khớp, lao cột sống|5
+-Viêm khớp nhiễm khuẩn, hội chứng Reiter, viêm khớp Lyme, mới khỏi chưa quá 6 tháng|5T
+-Viêm khớp do thấp, viêm khớp dạng thấp, viêm cột sống dính khớp (Bechterew)|
++Chưa gây teo hoặc biến dạng khớp, cứng khớp, chức năng khớp chưa hạn chế, sức khỏe toàn thân tốt|4
++Đã gây teo cơ, cứng khớp, biến dạng khớp, hạn chế chức năng khớp, ảnh hưởng sức khỏe toàn thân|
+*Mức độ nhẹ và vừa|5
+*Mức độ nặng|6
+106|Bàn chân bẹt|
+-Đi lại không gây đau|3
+-Đi lại đau, ảnh hưởng mang vác, chạy nhảy|4
+107|Chai chân, mắt cá, rỗ chân|
+-Chai chân (Durillon) dày sừng nhưng nắn còn mềm, đi lại không ảnh hưởng|2
+-Chai dày sừng gây cộm cứng, đi lại ảnh hưởng|4
+-Mắt cá lòng bàn chân (Cor plantaire)|
++Chỉ có 1 cái, đường kính ≤ 1 cm, đi lại không ảnh hưởng|2
++Có 2 cái, đường kính ≤ 1 cm, đi lại không ảnh hưởng|3
++Có ≥ 3 cái, hoặc có 1 - 2 cái nhưng đường kính trên 1 cm, hoặc mắt cá gây ảnh hưởng đến đi lại|4
+-Rỗ chân (Porokératose)|
++Có 1 - 2 điểm lõm trong 1 cm², đường kính các điểm lõm dưới 2 mm, đi lại không ảnh hưởng|2
++Có trên 2 điểm lõm trong 1 cm², hoặc đường kính các điểm lõm trên 2 mm, đi lại không ảnh hưởng|3
++Có trên 2 điểm lõm trong 1 cm² và đường kính các điểm lõm trên 2 mm, đi lại không ảnh hưởng|4
++Rỗ chân ảnh hưởng đến đi lại|5
+108|Dính ngón tay, ngón chân|
+-Chưa xử trí phẫu thuật|
++Không ảnh hưởng đến chức năng|2
++Ít ảnh hưởng đến chức năng|3T
++Ảnh hưởng đến chức năng của bàn tay, bàn chân|4T
+-Đã xử trí phẫu thuật|
++Không hoặc rất ít ảnh hưởng đến chức năng|2
++Co kéo, ảnh hưởng đến chức năng của bàn tay, bàn chân|4
+109|Thừa ngón tay, ngón chân|
+-Chưa cắt bỏ|3T
+-Đã cắt bỏ|
++Không ảnh hưởng đến chức năng của bàn tay, bàn chân|1
++Ít ảnh hưởng đến chức năng của bàn tay, bàn chân|2
++Ảnh hưởng nhiều đến chức năng của bàn tay, bàn chân|4
+110|Mất ngón tay, ngón chân|
+-Mất 1 đốt|
++Của 1 ngón tay cái|4
++Của ngón trỏ bàn tay thuận|5
++Của ngón trỏ bàn tay không thuận|4
++Của 1 ngón chân cái|4
++Của 1 ngón khác của bàn tay hoặc bàn chân, ảnh hưởng đến chức năng|3
++Của 1 ngón khác của bàn tay hoặc bàn chân, không ảnh hưởng đến chức năng|2
+-Mất 2 đốt|
++Của ngón tay trỏ bàn tay thuận|6
++Của ngón trỏ bàn tay không thuận|5
++Của 1 ngón khác của bàn tay hoặc bàn chân|4
++Của 2 ngón khác của bàn tay hoặc bàn chân|5
+-Mất 1 ngón|
++Mất 1 ngón cái của bàn tay thuận|6
++Mất 1 ngón cái của bàn tay không thuận|5
++Mất 1 ngón cái của bàn chân|5
++Mất 1 ngón trỏ của bàn tay thuận|5
++Mất 1 ngón khác của bàn tay hoặc bàn chân|4
+-Mất 2 ngón|
++Không mất ngón tay cái, ngón chân cái và ngón trỏ bàn tay thuận|5
++Có mất ngón tay cái, ngón chân cái, ngón trỏ bàn tay thuận|6
+-Mất 3 ngón trở lên|6
+111|Co rút ngón tay, ngón chân|
+-Co rút từ 1 - 2 ngón tay hoặc ngón chân|5
+-Co rút từ 3 ngón tay hoặc ngón chân trở lên|6
+112|Lệch vẹo ngón chân cái vào trong (Hallux varus) hay ra ngoài (Hallux valgus)|
+-Chưa phẫu thuật|4T
+-Đã phẫu thuật kết quả tốt|2
+-Đã phẫu thuật kết quả trung bình|3
+-Đã phẫu thuật kết quả kém|4
+113|Chấn thương, vết thương khớp|
+-Khớp vừa và lớn|
++Chưa điều trị khỏi|4T
++Đã điều trị khỏi, không để lại di chứng|3
++Đã điều trị, để lại di chứng ảnh hưởng vận động|4
+-Khớp nhỏ|
++Không ảnh hưởng hoặc ít ảnh hưởng đến vận động|2
++Ảnh hưởng nhiều đến vận động|3
+114|Sai khớp xương|
+-Sai khớp nhỏ, vừa|
++Chưa điều trị khỏi|3T
++Đã điều trị khỏi, không để lại di chứng|2
+-Sai khớp vừa đã điều trị nhưng để lại di chứng thành cố tật cản trở lao động và sinh hoạt|4
+-Sai khớp lớn|
++Đã nắn chỉnh không để lại di chứng|3
++Đã nắn chỉnh để lại di chứng|4-5
++Đã được phẫu thuật nắn chỉnh|
+*Không để lại di chứng, đã theo dõi 1 năm trở lên, lao động sinh hoạt bình thường|3
+*Để lại di chứng nhẹ|5
+*Để lại di chứng đau, hạn chế vận động, thoái hóa biến dạng hoặc cứng khớp|6
+-Sai khớp lớn không nắn chỉnh thành cố tật cản trở lao động và sinh hoạt|6
+-Sai khớp bệnh lý ở các khớp lớn|6
+-Sai khớp tái phát nhiều lần|6
+115|Gãy xương|
+-Gãy xương nhỏ|
++Chưa liền xương|3T
++Đã liền xương, không ảnh hưởng vận động|1
++Đã liền xương, có ảnh hưởng vận động|2
+-Gãy xương vừa và lớn|
++Chưa liền xương|5T
++Đã liền xương vững ở tư thế bình thường, không di chứng đau mỏi hoặc hạn chế vận động (từ khi gãy đến khi kiểm tra ≥ 1 năm)|2
++Đã liền xương vững, cong lệch trục không quan trọng, hạn chế vận động khớp, không đau mỏi, không thoái hóa biến dạng khớp, không ảnh hưởng đáng kể sinh hoạt|3
++Đã liền xương nhưng trục lệch vẹo, hạn chế vận động|5
++Có đau mỏi hạn chế vận động nhiều|5
++Có đau mỏi, thoái hóa biến dạng khớp nhiều|6
++Đã phẫu thuật nhưng còn phương tiện kết xương|Tính theo gãy xương vừa và lớn, không phương tiện kết xương
+116|Khớp giả xương dài tứ chi|
+-Kèm theo mất đoạn xương lớn, ngắn chi từ 5 cm trở lên (chi trên) và từ 3 cm trở lên (chi dưới)|6
+-Không kèm theo ngắn chi|5
+117|Dị dạng bẩm sinh|
+-Sai khớp lớn, mất đoạn xương, mất đầu xương|6
+118|Cứng, dính các khớp lớn|
+-Cứng, dính các khớp vai, khuỷu, gối, hông|6
+119|Cứng, dính khớp cổ tay, cổ chân|
+-Ở tư thế cơ năng|5
+-Không ở tư thế cơ năng|6
+120|Chênh lệch chiều dài chi|
+-Từ 2 cm trở xuống, không gây đau mỏi trong sinh hoạt, lao động|4
+-3 - 4 cm, ít nhiều ảnh hưởng tới thẩm mỹ và đau mỏi khi lao động, sinh hoạt|5
+-Trên 5 cm, đã ảnh hưởng tới thẩm mỹ và đau mỏi khi lao động, sinh hoạt|6
+121|Hai chân vòng kiềng hình chữ O, X, K|
+-Nhẹ, không ảnh hưởng tới đi lại, chạy nhảy (dưới 5 độ) hoặc ảnh hưởng không đáng kể|4
+-Vừa (5 - 10 độ) đi lại, chạy nhảy ít ảnh hưởng|5
+-Nặng (trên 10 độ) thường kèm biến dạng cẳng chân, bàn chân, ảnh hưởng chức năng vận động|6
+122|Cong gù cột sống|
+-Không ảnh hưởng đến chức năng hô hấp|3
+-Đã ổn định (không tiến triển, không gây viêm rò, đau mỏi), có ảnh hưởng đến chức năng hô hấp|4
+-Ảnh hưởng tới mang vác, vận động, chạy nhảy|5
+-Nặng: do di chứng bại liệt, di chứng chấn thương hoặc do lao cột sống phá hủy đốt sống|6
+123|Viêm xương|
+-Đơn giản, có xương viêm khu trú, không phá hủy xương rộng|5T
+-Viêm các xương lớn, viêm liên tục, hay tái phát|6
+124|Bệnh u xương, sụn lành tính ở nhiều xương|
+-Đã mổ đục bỏ u, không ảnh hưởng tới chức phận|4
+-Chưa mổ|5
+125|Ổ khuyết xương ở xương dài|
+-Ảnh hưởng đến độ vững của xương|5
+-Không ảnh hưởng đến độ vững của xương|4
+126|Hoại tử vô khuẩn chỏm xương đùi|5
+127|Viêm vô khuẩn lồi củ trước xương chày|4
+128|Hoại tử vô khuẩn mào xương chày|
+-Đã mổ đục xương, kết quả tốt|4
+-Chưa mổ, đau tái phát nhiều lần|5T
+129|Hoại tử vô khuẩn lồi cầu xương cánh tay|4T
+130|Bàn chân thuổng|
+-Không ngắn chi hoặc có ngắn chi từ 1 - 3 cm|5
+-Có ngắn chi trên 3 cm|6
+131|Đứt gân gót (gân Achille)|
+-Chưa điều trị|5
+-Đã khâu nối, gân liền tốt, chức năng khớp cổ chân, bàn chân bình thường|2
+-Đã khâu nối, gân liền tốt, chức năng khớp cổ chân, bàn chân hạn chế nhẹ|3
+-Đã khâu nối, gân liền tốt, chức năng khớp cổ chân, bàn chân hạn chế vừa và nặng|4
+-Gân không liền|5
+132|Dị tật bàn chân khèo|
+-Cả 2 bàn chân|6
+-1 bàn chân|5
+133|Di chứng bại liệt, liệt mềm ở chi thể|
+-Mức độ nặng|6
+-Mức độ vừa|5
+134|Di chứng bại não, liệt cứng ở chi thể|6
+135|Bàn tay khèo|6
+136|Dị tật bẩm sinh thiếu xương ở chi thể (xương quay, xương chày...)|6
+137|Sẹo bỏng và các loại sẹo do các nguyên nhân khác|
+-Nhỏ, đã lành, không ảnh hưởng đến vận động, sinh hoạt và lao động|1-2
+-Nhỏ, đã lành, có ảnh hưởng đến thẩm mỹ (ở mặt, cổ)|
++Ít|3
++Nhiều|4
+-Co kéo gây biến dạng|
++Ảnh hưởng ít đến chức phận, sinh hoạt và lao động|4
++Ảnh hưởng nhiều đến thẩm mỹ, lao động, sinh hoạt|5
+138|Giãn tĩnh mạch chân (Varice)|
+-Chưa thành búi|3
+-Đã thành búi, chạy nhảy đi lại nhiều thì căng, tức|4
+-Đã phẫu thuật kết quả tốt|3
+139|Các loại u|
+-U lành tính (u mỡ, u xơ, nang nhầy, u xương), không ảnh hưởng sức khỏe, lao động, luyện tập, sinh hoạt|
++Đường kính khối u dưới 1 cm|1
++Đường kính khối u từ 1 - 2 cm|2
++Đường kính khối u từ 3 - 4 cm|3
+-U lành tính (u mỡ, u xơ, nang nhầy, u xương) đã ảnh hưởng sinh hoạt, lao động, luyện tập, hoặc kích thước ≥ 5 cm|4
+-Các loại u ác tính ở các vị trí|6
+#Thận - Tiết niệu - Sinh dục
+140|Thận, tiết niệu|
+-Bệnh thận cấp tính: Viêm cầu thận cấp, viêm ống thận cấp do các nguyên nhân mới khỏi bệnh chưa quá 6 tháng|5
+-Bệnh thận mạn tính: Viêm cầu thận mạn, suy thận mạn do các nguyên nhân|6
+-Sỏi thận chưa có biến chứng|
++Chỉ có ở 1 bên, đã mổ kết quả tốt trên 1 năm|4
++Chỉ có ở 1 bên, đã mổ kết quả tốt dưới 1 năm|5
++Chưa mổ hoặc có sỏi ở 2 bên|5
++Sỏi thận đơn thuần ≤ 0,5 cm|3
++Sỏi thận đơn thuần 0,6 - 1,0 cm|4
++Sỏi thận đơn thuần > 1,0 cm; thận nhiều sỏi; sỏi san hô; sỏi ở 2 thận|5
+-Sỏi thận có biến chứng phải cắt 1 bên thận|6
+-U thận đã mổ|6
+-Nang thận|
++Chỉ có 1 nang, đường kính dưới 0,5 cm, không chèn ép đài, bể thận|2
++Có từ 2 nang trở lên hoặc đường kính trên 0,5 cm, không chèn ép đài bể thận|3
++Kích thước lớn, chèn ép đài bể thận|6
+-Sỏi niệu quản đơn thuần, 1 bên|
++Đã lấy sỏi không qua phẫu thuật|2
++Đã phẫu thuật lấy sỏi (kể cả phẫu thuật nội soi)|4
++Chưa lấy sỏi|5T
+-Sỏi niệu quản đơn thuần, 2 bên (kể cả đã phẫu thuật)|5
+-Sỏi niệu quản đã phẫu thuật có biến chứng (rò nước tiểu, chít hẹp gây giãn thận hoặc viêm thận)|6
+-Sỏi bàng quang, niệu đạo|
++Chưa lấy sỏi|4T
++Đã lấy sỏi không qua phẫu thuật, kết quả tốt|3
++Đã phẫu thuật lấy sỏi, kết quả tốt|4
++Đã phẫu thuật nhiều lần|5
+141|Các hội chứng tiết niệu|
+-Đái rắt, đái buốt, đái khó do nguyên nhân thực thể|4
+-Cơn đau quặn thận hay tái diễn|5T
+-Đái ra máu chưa rõ nguyên nhân, đái ra mủ, dưỡng chấp|5
+142|Viêm đường tiết niệu|
+-Viêm bể thận - thận cấp, viêm niệu đạo do lậu, viêm tuyến tiền liệt|5T
+-Viêm niệu đạo thường, viêm bàng quang cấp|3T
+143|Các bệnh thận bẩm sinh|
+-Sa thận (1 hoặc 2 bên)|5T
+-Thận móng ngựa|6
+-Thận kép 1 bên có biến chứng|6
+-Thận kép cả 2 bên|6
+-Thận lạc chỗ (1 - 2 bên) hoặc 1 thận|6
+-Thiểu sản thận|5
+144|Khối u sau phúc mạc|
+-U thận đã mổ hoặc chưa mổ|6
+-U tuyến thượng thận (huyết áp cao)|6
+-U mỡ, u quái, u thần kinh, u hạch|6
+145|Lao đường tiết niệu, sinh dục|
+-Lao thận đã mổ hoặc chưa mổ|6
+-Lao thận để lại di chứng hẹp niệu quản|6
+-Lao bàng quang, lao tuyến tiền liệt|6
+-Lao mào tinh hoàn (u cục hoặc rò)|6
+146|Các dị tật ở niệu quản|
+-Niệu quản nằm sau tĩnh mạch chủ|6
+-Niệu quản nằm sau động mạch chậu|6
+-Niệu quản kép 1 bên|6
+-Niệu quản kép 2 bên|6
+-Niệu quản lạc chỗ|6
+-Hẹp niệu quản các vị trí|5
+147|Các bệnh ở bàng quang|
+-U nhỏ bàng quang|5
+-U nhỏ bàng quang đã mổ, hồi phục tốt|4
+-U ác tính bàng quang|?
+-Túi thừa bàng quang, hẹp cổ bàng quang|5
+148|Sinh dục|
+-Hẹp bao quy đầu không ảnh hưởng tiểu tiện, hoặc đã phẫu thuật kết quả tốt|1
+-Hẹp bao quy đầu ảnh hưởng tiểu tiện|3T
+-Hẹp niệu đạo do di chứng lậu, chấn thương rò và hẹp niệu đạo khác|5
+149|Các dị tật dương vật|
+-Lỗ tiểu lệch thấp (hypospadias)|5
+-Lỗ tiểu lệch cao|6
+-Cụt dương vật|6
+-Niệu đạo kép|6
+150|Dị tật ở bìu|
+-Thiếu 1 bên tinh hoàn|3
+-Tinh hoàn ẩn hoặc lạc chỗ 1 bên chưa gây biến chứng|3T
+-Tinh hoàn ẩn hoặc lạc chỗ 1 bên đã gây biến chứng|4T
+-Thiếu hoặc ẩn cả 2 bên tinh hoàn|6
+-Ái nam, ái nữ|6
+-U tinh hoàn đơn thuần|5
+-U mào tinh hoàn (không phải lao)|4T
+-Tràn dịch màng tinh hoàn đã mổ tốt|4
+-Tràn dịch màng tinh hoàn chưa mổ|5
+-Viêm dày da tinh hoàn|5
+-Tràn máu màng tinh hoàn|5
+-Viêm loét da bìu|5T
+-U nang thừng tinh|
++Chưa mổ|5
++Đã mổ trên 6 tháng, diễn biến tốt|4
+-Teo tinh hoàn|
++Teo cả 2 bên do quai bị|6
++Teo 1 bên do bệnh khác, nếu bệnh đã ổn định|4
+-Teo mào tinh hoàn 1 - 2 bên|5
+-U nhú quy đầu và rãnh quy đầu|5T
+151|Ung thư dương vật|6
+152|Viêm tinh hoàn, viêm mào tinh hoàn|4T
+153|Giãn tĩnh mạch thừng tinh (Varicocele)|
+-Nhẹ|2
+-Vừa|3
+-Nặng|4
+#Nội tiết - Chuyển hóa - Máu
+154|Bệnh tuyến giáp|
+-Viêm tuyến giáp cấp tính|3T
+-Viêm tuyến giáp tự miễn|5
+-Bệnh Basedow|5
+-Bướu lành tính nhỏ, sờ thấy, chưa ảnh hưởng tới hô hấp (bướu giáp độ 0, I theo WHO)|3
+-Bướu lành tính to, có ảnh hưởng tới hô hấp, nói, nuốt (bướu giáp độ II, III theo WHO)|5
+-Ung thư tuyến giáp|6
+-Suy giáp|5
+-Teo tuyến giáp|5
+155|Đái tháo nhạt|5
+156|Bệnh lý tuyến thượng thận (Addison...)|6
+157|Bệnh lý tuyến yên|6
+158|Bệnh lý chuyển hóa|
+-Tiền đái tháo đường|4
+-Bệnh đái tháo đường|5
+-Bệnh đái tháo đường có biến chứng|6
+-Bệnh Gout|5
+-Rối loạn chuyển hóa Lipid|
++Có biến chứng tim mạch|5
++Chưa có biến chứng tim mạch|3
+159|Hội chứng nội tiết cận u|6
+160|Phì đại tuyến vú ở nam giới (1 hoặc 2 bên), ảnh hưởng thẩm mỹ|4
+161|Các bệnh hạch và bệnh máu ác tính|6
+162|Thiếu máu do các nguyên nhân|
+-Thiếu máu mức độ nặng (Hb < 80 g/l)|5
+-Thiếu máu mức độ vừa (Hb 80-109 g/l)|4
+-Thiếu máu mức độ nhẹ (nam Hb 110-129, nữ 110-119 g/l)|3
+#Da liễu
+163|Nấm da (Hắc lào)|
+-Thể điển hình, chưa có biến chứng, diện tích dưới 50 cm²|2T
+-Nấm da diện tích từ 50 - 100 cm² chưa có biến chứng, hoặc dưới 50 cm² nhưng có biến chứng chàm hóa, nhiễm khuẩn...|3T
+-Nấm da diện tích trên 100 cm², hoặc rải rác toàn thân, hoặc có biến chứng nặng (chàm hóa, nhiễm khuẩn...)|4T
+164|Nấm móng|
+-Có từ 1 - 2 móng bị nấm|2T
+-Có từ 3 - 4 móng bị nấm|3T
+-Có từ 5 móng trở lên bị nấm|4T
+165|Nấm da chân (Nấm kẽ)|
+-Chỉ bợt trắng từ 1 - 2 kẽ|2T
+-Chỉ bợt trắng từ 3 - 4 kẽ|3T
+-Bợt trắng từ 5 kẽ trở lên, hoặc có mụn nước từ 3 kẽ trở lên|4T
+166|Bệnh Lang ben|
+-Thể khu trú (mặt hoặc vai hoặc lưng...), diện tích dưới 1/3 diện tích cơ thể|2T
+-Thể lan tỏa chiếm trên 1/3 diện tích cơ thể|3T
+-Thể lan tỏa chiếm trên 1/3 diện tích cơ thể, ảnh hưởng đến thẩm mỹ (bị nhiều vùng mặt, cổ, gáy)|4T
+167|Nấm tóc, rụng tóc do các nguyên nhân|
+-Mức độ nhẹ|3
+-Mức độ vừa|4
+-Mức độ nặng|5
+168|Bị mắc từ 2 loại nấm trở lên (mục 163-167)|Lấy điểm loại nấm nặng nhất, tăng 1 điểm
+169|Ghẻ|
+-Thể giản đơn, khu trú, chưa có biến chứng (viêm da nhiễm khuẩn, chàm hóa...)|2T
+-Thể có biến chứng (viêm da nhiễm khuẩn, chàm hóa...) nhưng còn khu trú|3T
+-Ghẻ rải rác toàn thân và có biến chứng (viêm da nhiễm khuẩn, chàm hóa...)|4T
+170|Viêm da|
+-Viêm da tiếp xúc dị ứng/kích ứng|3
+-Viêm nang lông|3T
+-Chàm vi khuẩn|3T
+-Chàm hóa do bệnh da khác (nấm, tiếp xúc...)|4
+-Á sừng (viêm da cơ địa lòng bàn tay, bàn chân), á sừng vùng đầu (chàm không rõ nguyên nhân)|2
+-Viêm da cơ địa|6
+-Viêm da dầu|4
+-Tổ đỉa|5
+-Viêm da thần kinh (Lichen đơn dạng mạn tính)|
++Khu trú|4
++Lan tỏa (nhiều nơi)|5
+171|Bệnh da bọng nước (Pemphigus, Pemphigoid, Duhring Brocq)|6
+172|Bệnh tổ chức liên kết|
+-Lupus ban đỏ|
++Lupus ban đỏ mạn (dạng đĩa)|5
++Lupus ban đỏ hệ thống|6
+-Xơ cứng bì|
++Khu trú|4
++Toàn thể|6
+-Viêm da cơ|6
+-Viêm nút quanh động mạch; các hội chứng trùng lắp khác|5
+173|Bệnh da có vảy|
+-Bệnh vảy nến các thể|4-5-6
+-Á vảy nến|3
+-Vảy phấn hồng Gibert|3T
+-Lichen phẳng|5
+-Vảy phấn đỏ nang lông|3
+-Bệnh vảy cá|4
+174|Bệnh rối loạn sắc tố|
+-Bệnh bạch biến|
++Thể khu trú, đứt đoạn|3
++Thể lan tỏa|4
+-Sạm da|
++Khu trú vùng má (rám má)|2
++Rải rác (nguyên nhân nội tiết)|5
+-Đã phẫu thuật ghép da|Tính điểm theo mục 137
+175|Các tật bẩm sinh ở da, bớt các loại|
+-Diện tích dưới 3 cm², không ở vùng mặt - cổ|1
+-Diện tích từ 3 - 9 cm² không ở vùng mặt - cổ, hoặc dưới 3 cm² ở vùng mặt - cổ|2
+-Diện tích từ 10 - 20 cm² không ở vùng mặt - cổ, hoặc từ 3 - 4 cm² ở vùng mặt - cổ|3
+-Diện tích trên 4 cm² ở vùng mặt - cổ, hoặc trên 20 cm², hoặc rải rác nhiều nơi|4
+176|Bệnh phong tất cả các thể|6
+177|Bệnh lây theo đường tình dục|
+-Giang mai|
++Giang mai giai đoạn 1 và 2 sớm, đã điều trị đúng, đủ phác đồ|3
++Giang mai giai đoạn 2 muộn, đã điều trị đúng, đủ phác đồ|4
++Giang mai giai đoạn 3|6
++Giang mai chưa điều trị ổn định|5
+-Lậu|
++Lậu cấp đã điều trị khỏi|2
++Lậu cấp chưa điều trị|4
++Lậu mạn có tổn thương bộ phận tiết niệu, sinh dục|5
+-Bệnh hạ cam (Chancre mou)|
++Đã điều trị khỏi|3
++Chưa điều trị|4
+-Sùi mào gà (Papilloma)|4
+-Bệnh hột xoài (Nicolas-Favre)|5
+-Nhiễm HIV|6
+178|Dày sừng lòng bàn chân cơ địa|5
+179|Trứng cá và một số bệnh khác|
+-Trứng cá thường (chỉ tính vùng mặt)|
++Dưới 100 sẩn, không có mụn mủ|1
++Từ 100 - 200 sẩn và/hoặc < 5 mụn mủ|2T
++> 200 sẩn và/hoặc ≥ 5 mụn mủ|3T
+-Trứng cá hoại tử, trứng cá mạch lươn, trứng cá sẹo lồi|4
+-Trứng cá đỏ|5
+180|Sẩn ngứa, sẩn cục do côn trùng đốt (ruồi vàng, bọ chó, dĩn...)|
+-Số lượng dưới 10 nốt|2T
+-Từ 10 - 30 nốt|3T
+-Từ 30 - 50 nốt|4T
+-Trên 50 nốt|5
+181|Mày đay mạn tính|6
+183|Lao da các loại|5
+184|Các bệnh u da|
+-U xơ thần kinh (bệnh di truyền)|5
+-Các loại u lành tính khác|4
+185|Cấy dị vật vào dương vật|4T
+186|Sùi mào gà (Papilloma) ở hậu môn, sinh dục|4
+#Phụ khoa
+187|Kinh nguyệt|
+-Kinh nguyệt nhiều, hay xuất hiện và không đều|4
+-Vô kinh, thiểu kinh, hiếm kinh|5
+-Chảy máu bất thường khác của tử cung, âm đạo|5
+188|U cơ trơn tử cung (đã phẫu thuật bóc u hoặc chưa phẫu thuật)|4T
+189|U lành buồng trứng (đã phẫu thuật bóc u hoặc chưa phẫu thuật)|4
+190|U lành của các cơ quan sinh dục khác không xác định (đã phẫu thuật bóc u hoặc chưa)|4
+191|Loạn sản vú lành tính|4
+192|Vú phì đại|4
+193|Biến đổi khác ở vú|4
+194|Viêm vòi tử cung và viêm buồng trứng|4
+195|Viêm vòi tử cung trừ cổ tử cung|2-3
+196|Viêm cổ tử cung|4T
+197|Các bệnh của tuyến Bartholin|4T
+198|Các bệnh khác của âm đạo và âm hộ|4
+199|Lạc nội mạc tử cung|4
+200|Polyp đường sinh dục nữ|4T
+201|Những dị tật bẩm sinh của buồng trứng, vòi trứng và dây chằng rộng|4
+202|Dị tật bẩm sinh của tử cung và cổ tử cung|4
+203|Các dị tật bẩm sinh của cơ quan sinh dục nữ|
+-Âm đạo đôi|4T
+-Dị tật bẩm sinh âm vật|4-6
+-Màng trinh không thủng|3T
+-Dị tật bẩm sinh của vú|4
+-Các dị tật bẩm sinh khác của cơ quan sinh dục nữ|4
+204|Có thai|4T
+205|Sùi mào gà (Papilloma) ở hậu môn, sinh dục|4
+#Miễn đăng ký NVQS (mục III)
+M1|Tâm thần (ICD10 F20 đến F29)|Miễn
+M2|Động kinh (G40)|Miễn
+M3|Bệnh Parkinson (G20)|Miễn
+M4|Mù một mắt (H54.4)|Miễn
+M5|Điếc (H90)|Miễn
+M6|Di chứng do lao xương khớp (B90.2)|Miễn
+M7|Di chứng do phong (B92)|Miễn
+M8|Các bệnh lý ác tính: u ác, bệnh máu ác tính (C00-C97; D00-D09; D45-D47)|Miễn
+M9|Người nhiễm HIV (B20-B24; Z21)|Miễn
+M10|Người khuyết tật mức độ đặc biệt nặng và nặng|Miễn
+</script>
+
+<script>
+/*SCORING-START*/
+function roundHalfUp(x){ return Math.floor(x+0.5); }
+function scoreHeight(h,sex){
+  if(sex==='f') return h>=154?1 : h>=152?2 : h>=150?3 : h>=148?4 : h>=147?5 : 6;
+  return h>=163?1 : h>=160?2 : h>=157?3 : h>=155?4 : h>=153?5 : 6;
+}
+function scoreWeight(w,sex){
+  if(sex==='f') return w>=48?1 : w>=44?2 : w>=42?3 : w>=40?4 : w>=38?5 : 6;
+  return w>=51?1 : w>=47?2 : w>=43?3 : w>=41?4 : w>=40?5 : 6;
+}
+function scoreChest(c){ return c>=81?1 : c>=78?2 : c>=75?3 : c>=73?4 : c>=71?5 : 6; }
+function scoreBMI(b){
+  if(b>=40) return 6; if(b>=35) return 5; if(b>=30) return 4;
+  if(b>=27) return 3; if(b>=25) return 2; if(b>=18.5) return 1; return 4;
+}
+function scoreSys(s){
+  if(s>=160) return 6; if(s>=150) return 5; if(s>=140 || s<90) return 4;
+  if(s>=131 || s<100) return 3; if(s>=121 || s<110) return 2; return 1;
+}
+function scoreDia(d){ return d>=100?5 : d>=90?4 : d>=86?3 : d>=81?2 : 1; }
+// Mục 101
+function scorePulse(p, lian, sev){
+  if(p>=100 || p<50) return {score:+sev, kind:'sev'};
+  if(p>=91) return {score:4};
+  if(p>=50 && p<=54){
+    if(lian==='good') return {score:3, kind:'lian'};
+    if(lian==='bad') return {score:4, kind:'lian'};
+    return {score:4, kind:'lianPending'};
+  }
+  if(p>=86 || p<=56) return {score:3};
+  if(p>=81 || p<=59) return {score:2};
+  return {score:1};
+}
+/*SCORING-END*/
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+function parseNum(v){ if(v==null) return null; v=String(v).trim().replace(',', '.'); if(v===''||v==='+'||v==='-') return null; const n=parseFloat(v); return isNaN(n)?null:n; }
+function num(id){ const n=parseNum($(id).value); return n!=null && n>0 ? n : null; }
+function fmtVN(v){ return String(v).replace('.', ','); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ===== TRA CỨU BỆNH ===== */
+function norm(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'d').toLowerCase(); }
+function low(s){ return s.normalize('NFC').toLowerCase(); }
+function prep(s){ return ' '+s.replace(/[^\p{L}\p{N}.,]+/gu,' ')+' '; }
+function hasMark(s){ return norm(s)!==low(s); }
+function wordHit(hay, t){ return hay.includes(' '+t); }
+
+const ITEMS = (()=>{
+  const items=[]; let sec='', cur=null, stack=[];
+  document.getElementById('db').textContent.split('\n').forEach(raw=>{
+    const line=raw.trim(); if(!line) return;
+    if(line[0]==='#'){ sec=line.slice(1).trim(); return; }
+    const lvl = {'-':1,'+':2,'*':3}[line[0]] || 0;
+    const parts = (lvl ? line.slice(1) : line).split('|');
+    if(lvl===0){
+      cur={sec, tt:parts[0].trim(), name:parts[1].trim(), leaves:[]};
+      items.push(cur); stack=[];
+      const sc=(parts[2]||'').trim();
+      if(sc) cur.leaves.push({ctx:'', name:'', score:sc});
+      return;
+    }
+    const name=parts[0].trim(), sc=(parts[1]||'').trim();
+    stack.length = lvl-1; stack[lvl-1]=name;
+    if(sc) cur.leaves.push({ctx:stack.slice(0,lvl-1).join(' › '), name, score:sc});
+  });
+  items.forEach(it=>{
+    const h=`${it.tt} ${it.name} ${it.sec}`;
+    it.hay={n:prep(norm(h)), d:prep(low(h))};
+    it.leaves.forEach(l=>{ const t=`${l.ctx} ${l.name}`; l.hay={n:prep(norm(t)), d:prep(low(t))}; });
+  });
+  return items;
+})();
+
+function scoreHTML(s){
+  if(s==='Miễn') return '<span class="sc cM">Miễn</span>';
+  if(s==='?') return '<span class="sc c0" title="Văn bản không ghi điểm">--</span>';
+  if(/^[\d\s,\-T]+$/.test(s)){
+    const mx=Math.max(...(s.match(/\d/g)||[0]).map(Number));
+    return `<span class="sc c${mx}">${esc(s.replace(/\s+/g,''))}</span>`;
+  }
+  return `<span class="sc txt">${esc(s)}</span>`;
+}
+let HLMODE='n';
+function hl(text, toks){
+  if(!toks.length) return esc(text);
+  text=text.normalize('NFC');
+  const n = HLMODE==='d' ? low(text) : norm(text);
+  if(n.length!==text.length) return esc(text);
+  const mark=new Array(text.length).fill(false);
+  toks.forEach(t=>{ let i=n.indexOf(t); while(i>=0){ if(i===0 || !/[\p{L}\p{N}]/u.test(n[i-1])) for(let k=i;k<i+t.length;k++) mark[k]=true; i=n.indexOf(t,i+1); } });
+  let out='', on=false;
+  for(let i=0;i<text.length;i++){
+    if(mark[i]&&!on){ out+='<mark>'; on=true; }
+    if(!mark[i]&&on){ out+='</mark>'; on=false; }
+    out+=esc(text[i]);
+  }
+  return out+(on?'</mark>':'');
+}
+
+const MAX_ITEMS=40;
+function doSearch(){
+  const qv=$('#q').value.trim();
+  $('#qClr').hidden=!qv;
+  const res=$('#qRes');
+  if(!qv){ res.innerHTML=''; return; }
+  const mode=hasMark(qv)?'d':'n';
+  const toks=(mode==='d'?low(qv):norm(qv)).split(/[^\p{L}\p{N}.,]+/u).filter(Boolean);
+  const isNum=/^m?\d+$/i.test(qv);
+  const hits=[];
+  ITEMS.forEach(it=>{
+    if(isNum){ if(norm(it.tt)===norm(qv)) hits.push({it, leaves:it.leaves, rank:0}); return; }
+    const H=it.hay[mode];
+    if(toks.every(t=>wordHit(H,t))){ hits.push({it, leaves:it.leaves, rank:0}); return; }
+    const ls=it.leaves.filter(l=>toks.every(t=>wordHit(H,t)||wordHit(l.hay[mode],t)));
+    if(ls.length) hits.push({it, leaves:ls, rank:1});
+  });
+  hits.sort((a,b)=>a.rank-b.rank);
+  HLMODE=mode;
+  if(!hits.length){
+    const inCalc = /^(99|101)$/.test(qv) || /^(huyet ap|mach)$/.test(norm(qv));
+    res.innerHTML=`<div class="noresult">Không tìm thấy "${esc(qv)}".${inCalc?' HA (mục 99) và mạch (mục 101) chấm ở phần bên dưới.':' Thử từ khóa ngắn hơn hoặc không dấu.'}</div>`;
+    return;
+  }
+  res.innerHTML = hits.slice(0,MAX_ITEMS).map(({it,leaves})=>{
+    const direct = leaves.length===1 && !leaves[0].name;
+    const head=`<div class="ihead"><span class="tt">${esc(it.tt)}</span><span class="nm">${hl(it.name,toks)}</span><span class="sec">${esc(it.sec)}</span>${direct?scoreHTML(leaves[0].score):''}</div>`;
+    if(direct) return `<div class="item">${head}</div>`;
+    return `<div class="item">${head}${leaves.map(l=>
+      `<div class="leaf"><div class="lt">${l.ctx?`<small>${hl(l.ctx,toks)}</small>`:''}<span>${hl(l.name,toks)}</span></div>${scoreHTML(l.score)}</div>`).join('')}</div>`;
+  }).join('') + (hits.length>MAX_ITEMS?`<div class="more">Còn ${hits.length-MAX_ITEMS} mục nữa, gõ cụ thể hơn.</div>`:'');
+  $('.pin').scrollTop=0;
+}
+
+/* Mở / đóng thẻ tìm kiếm */
+const sw=$('#sw'), bd=$('#backdrop');
+function openS(){ if(!$('#q').value.trim()) return closeS(false); sw.classList.add('open'); bd.classList.add('on'); }
+function closeS(blur=true){ sw.classList.remove('open'); bd.classList.remove('on'); if(blur) $('#q').blur(); }
+$('#q').addEventListener('input', ()=>{ doSearch(); openS(); });
+$('#q').addEventListener('focus', ()=>{ $('#q').value=''; doSearch(); closeS(false); });
+$('#q').addEventListener('keydown', e=>{ if(e.key==='Escape') closeS(); if(e.key==='Enter') $('#q').blur(); });
+$('#qClr').addEventListener('click', ()=>{ $('#q').value=''; doSearch(); closeS(false); $('#q').focus(); });
+document.addEventListener('pointerdown', e=>{ if(sw.classList.contains('open') && !$('#scard').contains(e.target)) closeS(); });
+
+/* ===== THỂ LỰC + HA, MẠCH ===== */
+$$('.unit input').forEach(i=>i.addEventListener('input', recalc));
+$$('.seg').forEach(seg=>{
+  seg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+    seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+    seg.dataset.value=b.dataset.v;
+    recalc();
+  }));
+});
+function setSeg(id, v){ const seg=$(id); seg.dataset.value=v; seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v===v)); }
+
+$('#resetBtn').addEventListener('click', ()=>{
+  const fb=$('#resetBtn'); fb.classList.remove('spin'); void fb.offsetWidth; fb.classList.add('spin'); setTimeout(()=>fb.classList.remove('spin'),460);
+  setSeg('#segSex','m'); setSeg('#segLian','none'); setSeg('#segSev','5');
+  ['#h','#w','#ch','#sys','#dia','#pulse'].forEach(i=>$(i).value='');
+  $('#q').value=''; doSearch(); closeS();
+  recalc(); window.scrollTo({top:0,behavior:'smooth'});
+});
+
+function setChip(id, s){
+  const el=$(id), txt=s==null?'--':String(s);
+  if(el.textContent!==txt && s!=null){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+  el.className='chip c'+(s==null?0:s)+(el.classList.contains('pop')?' pop':'');
+  el.textContent=txt;
+}
+function setHead(id, s){ const el=$(id), t=s==null?'--':String(s); if(el.textContent!==t && s!=null){ el.classList.remove('pop'); void el.offsetWidth; } el.textContent=t; el.className='hsc c'+(s==null?0:s)+(s!=null?' pop':''); }
+function setSub(id, t, warn){ const el=$(id); el.textContent=t||''; el.classList.toggle('warn', !!warn); }
+
+function recalc(){
+  const sex=$('#segSex').dataset.value;
+  $('#chestField').hidden = sex==='f';
+  const h=num('#h'), w=num('#w'), ch = sex==='m' ? num('#ch') : null;
+  const phys=[];
+  let hr=null, wr=null, s;
+
+  if(h!=null){ hr=roundHalfUp(h); s=scoreHeight(hr,sex); phys.push(s); setChip('#sH',s); setSub('#hSub', hr!==h?`Làm tròn: ${hr} cm`:''); }
+  else { setChip('#sH',null); setSub('#hSub',''); }
+  if(w!=null){ wr=roundHalfUp(w); s=scoreWeight(wr,sex); phys.push(s); setChip('#sW',s); setSub('#wSub', wr!==w?`Làm tròn: ${wr} kg`:''); }
+  else { setChip('#sW',null); setSub('#wSub',''); }
+  if(ch!=null){ const cr=roundHalfUp(ch); s=scoreChest(cr); phys.push(s); setChip('#sC',s); setSub('#chSub', cr!==ch?`Làm tròn: ${cr} cm`:''); }
+  else { setChip('#sC',null); setSub('#chSub', sex==='m' && (h!=null||w!=null) ? 'Cần nhập để đủ chỉ tiêu thể lực' : '', true); }
+
+  const bv=$('#bmiV');
+  if(hr && wr){
+    const bmi=Math.round(wr/Math.pow(hr/100,2)*10)/10; s=scoreBMI(bmi); phys.push(s);
+    bv.textContent=fmtVN(bmi.toFixed(1)); bv.classList.remove('empty'); setChip('#sB',s);
+    if(bmi<18.5){
+      const minW=Math.ceil(18.5*Math.pow(hr/100,2) - 1e-9);
+      setSub('#bmiSub', `Dưới 18,5. Cao ${hr} cm cần nặng ≥ ${minW} kg`, true);
+    } else setSub('#bmiSub','');
+  } else { bv.textContent='--'; bv.classList.add('empty'); setChip('#sB',null); setSub('#bmiSub',''); }
+
+  // HA, mạch
+  const sys=num('#sys'), dia=num('#dia'), pu=num('#pulse');
+  const nk=[];
+  if(sys!=null){ s=scoreSys(Math.round(sys)); nk.push(s); setChip('#sS',s); } else setChip('#sS',null);
+  if(dia!=null){ s=scoreDia(Math.round(dia)); nk.push(s); setChip('#sD',s); } else setChip('#sD',null);
+  let lianShow=false, sevShow=false; const pn=[]; let pw=false;
+  if(pu!=null){
+    const p=Math.round(pu);
+    const r=scorePulse(p, $('#segLian').dataset.value, $('#segSev').dataset.value);
+    nk.push(r.score); setChip('#sP',r.score);
+    if(r.kind==='lianPending'){ pn.push('Tạm tính 4, chờ nghiệm pháp Lian'); pw=true; }
+    if(p<50){ pn.push('Làm nghiệm pháp Atropin tại cơ sở có điều kiện'); pw=true; }
+    if(p>=90) pn.push('≥ 90: khám chuyên khoa tim mạch, nội tiết');
+    lianShow = p>=50 && p<=54; sevShow = p>=100 || p<50;
+  } else setChip('#sP',null);
+  setSub('#pSub', pn.join('. '), pw);
+  $('#lianWrap').hidden=!lianShow; $('#sevWrap').hidden=!sevShow;
+
+  setHead('#hTL', phys.length?Math.max(...phys):null);
+  setHead('#hNK', nk.length?Math.max(...nk):null);
+}
+recalc();
+</script>
+</body>
+</html>
